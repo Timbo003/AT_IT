@@ -1,0 +1,69 @@
+#single
+# Create a ColumnTransformer to apply one-hot encoding to categorical features
+max_tree_depth = 5 # max_depth=10 drinne lassen ???? ist nur drin, damit man es einfacher anpassen kann
+
+preprocessor = ColumnTransformer(
+    transformers=[
+        ('num', 'passthrough', numeric_features),
+        ('cat', OneHotEncoder(), categorical_features)
+    ])
+
+# Create a Decision Tree classifier within a pipeline
+clf = Pipeline([
+    ('preprocessor', preprocessor),
+    ('classifier', DecisionTreeClassifier(max_depth=max_tree_depth,random_state=42)) 
+])
+
+# Train the classifier on the training set
+clf.fit(X_train, y_train)
+
+# Make predictions on the testing set
+y_pred = clf.predict(X_test)
+
+# Calculate and print the accuracy of the classifier
+accuracy = accuracy_score(y_test, y_pred)
+print("Accuracy:", accuracy)
+
+
+
+# just for testing 
+
+# Create arrays to store max_depth and corresponding accuracies
+depths = []
+accuracies = []
+
+# Loop through max depths from 1 to 10
+for max_tree_depth in range(1, 5):
+    # Create a ColumnTransformer to apply one-hot encoding to categorical features | wichtig!!!
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ('num', 'passthrough', numeric_features),
+            ('cat', OneHotEncoder(), categorical_features)
+        ])
+
+    # Create a Decision Tree classifier within a pipeline
+    clf = Pipeline([
+        ('preprocessor', preprocessor),
+        ('classifier', DecisionTreeClassifier(max_depth=max_tree_depth, random_state=42))
+    ])
+
+    # Train the classifier on the training set
+    clf.fit(X_train, y_train)
+
+    # Make predictions on the testing set
+    y_pred = clf.predict(X_test)
+
+    # Calculate the accuracy of the classifier
+    accuracy = accuracy_score(y_test, y_pred)
+    print(f"Max Depth: {max_tree_depth}, Accuracy: {accuracy}")
+
+    # Store depth and accuracy in arrays
+    depths.append(max_tree_depth)
+    accuracies.append(accuracy)
+
+# Plotting the graph
+plt.plot(depths, accuracies, marker='o')
+plt.title('Max Depth vs. Accuracy')
+plt.xlabel('Max Depth')
+plt.ylabel('Accuracy')
+plt.show()

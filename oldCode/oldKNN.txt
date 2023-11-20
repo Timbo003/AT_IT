@@ -1,0 +1,20 @@
+#Preprossing for K-Nearest-Neighbors Trainingset
+knn_label_encoder = preprocessing.LabelEncoder()
+y_train_knn = knn_label_encoder.fit_transform(y_train)
+
+knn_encoder = preprocessing.OneHotEncoder()
+knn_encoded = pd.DataFrame(knn_encoder.fit_transform(X_train[['Airline', 'AirportFrom', 'AirportTo']]).toarray(), columns = knn_encoder.get_feature_names_out(['Airline', 'AirportFrom', 'AirportTo']))
+
+knn_train_preprocessed = X_train.drop(columns = ['Airline', 'AirportFrom', 'AirportTo'])
+knn_train_preprocessed = knn_train_preprocessed.join(knn_encoded)
+knn_train_preprocessed
+
+
+#Preprocessing for K-Nearest-neighbors Testset
+y_test_knn = knn_label_encoder.fit_transform(y_test)
+
+knn_encoded = pd.DataFrame(knn_encoder.fit_transform(X_test[['Airline', 'AirportFrom', 'AirportTo']]).toarray(), columns = knn_encoder.get_feature_names_out(['Airline', 'AirportFrom', 'AirportTo']))
+
+knn_test_preprocessed = X_test.drop(columns = ['Airline', 'AirportFrom', 'AirportTo'])
+knn_test_preprocessed = knn_test_preprocessed.join(knn_encoded)
+knn_test_preprocessed
