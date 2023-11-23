@@ -17,4 +17,6 @@ knn_encoded = pd.DataFrame(knn_encoder.fit_transform(X_test[['Airline', 'Airport
 
 knn_test_preprocessed = X_test.drop(columns = ['Airline', 'AirportFrom', 'AirportTo'])
 knn_test_preprocessed = knn_test_preprocessed.join(knn_encoded)
-knn_test_preprocessed
+
+
+#testPush
