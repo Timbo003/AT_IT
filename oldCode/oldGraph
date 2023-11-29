@@ -1,0 +1,98 @@
+print("\ndata head:")
+print(df.head()) #Check table composition
+
+print("\ndata shape:")
+print(df.shape) #How many entries are there? (Get height and width of Dataset)
+
+print("\ndata info:")
+print(df.info()) #Check for empty datatuple
+
+print("\ndata discription:")
+print(df.describe()) #Data visualization -> Mean etc.
+
+#Outliers -> Only binary decision -> no problem
+duplicate_values = df.duplicated()
+if duplicate_values.any:
+    print("\nNo duplicates")
+else:    
+    print("\nDuplicates found")
+    print(duplicate_values)
+
+
+duplicate_values = df['id'].duplicated()
+if duplicate_values.any:
+    print("\nNo duplicates id")
+else:    
+    print("\nDuplicates found id")
+    print(duplicate_values)
+
+
+# Farben für Delayed und Not Delayed festlegen
+colors = ['lightcoral','skyblue']
+
+# 1. Bar Chart of Delay Counts
+delay_counts = df['Delay'].value_counts()
+
+plt.figure(figsize=(6, 4))
+delay_counts.plot(kind='bar', color=['skyblue', 'lightcoral']) 
+plt.xlabel('Delayed (1) or Not Delayed (0)')
+plt.ylabel('Count')
+plt.title('Bar Chart of Delay Counts')
+plt.xticks([0, 1], ['Not Delayed', 'Delayed'])
+plt.show()
+
+
+#2.1 Chart of Country and Delay Count
+delay_counts_by_airline = df.groupby('Airline')['Delay'].agg(['sum', 'count'])
+delay_counts_by_airline = delay_counts_by_airline.sort_values(by='sum', ascending=False)
+plt.figure(figsize=(12, 6))
+delay_counts_by_airline.plot(kind='bar', color=colors)
+plt.xlabel('Airline')
+plt.ylabel('Flights Count')
+plt.title('Flights Count by Airline')
+plt.legend(['Delayed', 'Not Delayed'])
+plt.xticks(rotation=45)
+plt.show()
+
+
+# 3. Bar Chart of Day of the Week vs. Delay Counts
+day_counts = df.groupby('DayOfWeek')['Delay'].agg(['sum', 'count'])
+plt.figure(figsize=(8, 4))
+day_counts.plot(kind='bar', color=colors)
+plt.xlabel('Day of the Week')
+plt.ylabel('Flights Count')
+plt.title('Flights Count by Day of the Week')
+plt.legend(['Delayed', 'Not Delayed'])
+plt.xticks(rotation=0)
+plt.show()
+
+# 4. Bar Chart of Airport Pairs and Delay Counts
+airport_pairs_counts = df.groupby(['AirportFrom', 'AirportTo'])['Delay'].agg(['sum', 'count']).nlargest(10, 'sum')
+plt.figure(figsize=(12, 6))
+airport_pairs_counts.plot(kind='bar', color=colors)
+plt.xlabel('Airport Pair')
+plt.ylabel('Flights Count')
+plt.title('Top 10 Airport Pairs with the Most Flights')
+plt.legend(['Delayed', 'Not Delayed'])
+plt.xticks(rotation=45)
+plt.show()
+
+# 5. Bar Chart of Flight Length
+plt.figure(figsize=(10, 5))
+plt.hist([df[df['Delay'] == 1]['Length'], df[df['Delay'] == 0]['Length']], bins=20, color=colors, stacked=True)
+plt.xlabel('Flight Length (minutes)')
+plt.ylabel('Flights Count')
+plt.title('Bar Chart of Flight Length')
+plt.legend(['Delayed', 'Not Delayed'])
+plt.show()
+
+# 6. Bar Chart of Time
+plt.figure(figsize=(10, 5))
+plt.hist([df[df['Delay'] == 1]['Time'], df[df['Delay'] == 0]['Time']], bins=20, color=colors, stacked=True)
+plt.xlabel('Time (minutes)')
+plt.ylabel('Flights Count')
+plt.title('Bar Chart of Time')
+plt.legend(['Delayed', 'Not Delayed'])
+plt.show()
+
+
