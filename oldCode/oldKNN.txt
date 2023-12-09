@@ -20,3 +20,198 @@ knn_test_preprocessed = knn_test_preprocessed.join(knn_encoded)
 
 
 #testPush
+
+--------------------------------------------------------------------------
+
+# Create arrays
+k_count = []
+precisions = []
+recalls = []
+f1_scores = []
+accuracies = []
+trainAccuracies = []
+
+k_range = 21 #rule of thumb 1-20
+for k in range(1, k_range):
+    k_count.append(k)
+
+    # create an KNN Classifier
+    knn_estimator = KNeighborsClassifier(n_neighbors = k, algorithm='ball_tree', n_jobs=-1) #use ball_tree algorithm to have a shorter runtime
+    # train with trainingsdata
+    knn_estimator.fit(X_train, y_train)
+    #predict test data
+    predicted_knn = knn_estimator.predict(X_test) 
+    
+    #------------------------------------
+
+    # measurements:
+
+    accuracy = accuracy_score(y_test, predicted_knn)
+    accuracies.append(accuracy)
+
+    recall = recall_score(y_test, predicted_knn, average='weighted')
+    recalls.append(recall)
+
+    precision = precision_score(y_test, predicted_knn, average='weighted')
+    precisions.append(precision)
+    
+    f1 = f1_score(y_test, predicted_knn, average='weighted')
+    f1_scores.append(f1)
+    
+
+    # For comparison predict on training data
+    y_predTrain = knn_estimator.predict(X_train)
+    trainAccuracy = accuracy_score(y_train, y_predTrain)
+    trainAccuracies.append(trainAccuracy)
+    
+    print(f"K: {k}, Test Accuracy:  {accuracy}, Precision: {precision}, Recall: {recall}, f1: {f1}")
+    print(f"K: {k}, Train Accuracy: {trainAccuracy}")
+
+#------------------------------
+
+# plot accuracies of training and test data
+
+plt.figure(figsize=(20, 10))
+plt.plot(k_count, accuracies, marker='o', label='Test Accuracy')
+plt.plot(k_count, trainAccuracies, marker='o', label='Training Accuracy')
+
+plt.title('k vs. Accuracy')
+plt.xlabel('k')
+plt.ylabel('Accuracy')
+plt.legend()
+plt.savefig("graphs/knn.pdf")
+plt.show()
+
+
+------------------------------------------------------------------
+
+#UNTERER TEIL IST ALT
+from sklearn.model_selection import RandomizedSearchCV
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score
+from scipy.stats import randint
+
+# Create arrays
+k_count = []
+precisions = []
+recalls = []
+f1_scores = []
+accuracies = []
+results_array = []
+cv_scores = []
+
+
+# Define parameters for RandomizedSearchCV
+param_dist = {
+    'algorithm': ['ball_tree'],  # ball_tree algorithm for shorter runtime
+    'n_jobs': [-1], #use all cores --> shorter runtime
+    'weights': ['uniform', 'distance'], #uniform: all points weighted equally | distance: closer neighbors are weighted more
+    'p': [1, 2, 3], #distance metric used to calculate the distance between points | 1 = manhattan, 2 = euclidean, 3 = minkowski
+    'n_neighbors': [k]
+}
+
+# Number of random samples
+n_iter_search = 20
+
+# Define the KFold for the outer loop
+kfolds = KFold(n_splits=5, shuffle=True, random_state=42)
+
+#loop for all k
+k_range = 21
+for k in range (1, 21): #k in range 1-20 as rule of thumb
+    k_count.append(k)
+
+    # Create a KNN Classifier
+    knn_estimator = KNeighborsClassifier()
+
+    # Perform RandomizedSearchCV
+    random_search = RandomizedSearchCV(
+        estimator=knn_estimator, 
+        param_distributions=param_dist, 
+        n_iter=n_iter_search, 
+        cv=5, 
+        scoring='accuracy', 
+        error_score='raise',
+        random_state=42
+    )
+    random_search.fit(X_train, y_train)
+
+    # Perform nested cross-validation
+    cv_score = cross_val_score(random_search, X_train, y_train, cv=kfolds, scoring=make_scorer(accuracy_score))
+
+    # Test on the other 20%
+    clf = Pipeline([('classifier', random_search.best_estimator_)])
+
+    clf.fit(X_train, y_train)
+    y_pred = clf.predict(X_test)
+
+    # Calculate metrics
+    accuracy = accuracy_score(y_test, y_pred)
+    precision = precision_score(y_test, y_pred)
+    recall = recall_score(y_test, y_pred)
+    f1 = f1_score(y_test, y_pred)
+
+    # Store results in array
+    results_array.append([k, accuracy, cv_score.mean(), precision, recall, f1, random_search.best_params_])
+    accuracies.append(accuracy)
+    k_count.append(k)
+    cv_scores.append(cv_score.mean())
+
+    print(results_array[-1])
+
+    #plot for depth and accuracy
+    plt.plot(k_count, accuracies, marker='o', label="CV Accuracy (20% Test Data)")
+    plt.plot(k_count, cv_scores, marker='o', label="Nested CV Accuracy")
+    plt.legend()
+    plt.title('Max Depth vs. Accuracy and Cross-Validation Score')
+    plt.xlabel('Max Depth')
+    plt.ylabel('Score')
+    plt.savefig("graphs/dtNestedCvaAcc.pdf")
+    plt.show()
+
+    #-------------------------------------------------------------------------------------------
+
+    # Get the best parameters found by RandomizedSearchCV
+    best_params = random_search.best_params_
+
+    # Initialize the KNN Classifier with the best parameters
+    best_knn = KNeighborsClassifier(**best_params)
+
+    # Train the model with the best parameters on the entire training set
+    best_knn.fit(X_train, y_train)
+
+    # Make predictions on the test set
+    predicted_knn = best_knn.predict(X_test)
+    accuracy = accuracy_score(y_test, predicted_knn)
+    accuracies.append(accuracy)
+
+    predicted_knn_train = best_knn.predict(X_train)
+    trainAccuracy = accuracy_score(y_train, predicted_knn_train)
+    trainAccuracies.append(trainAccuracy)
+
+    # Calculate metrics
+    
+    recall = recall_score(y_test, predicted_knn, average='weighted')
+    recalls.append(recall)
+    precision = precision_score(y_test, predicted_knn, average='weighted')
+    precisions.append(precision)
+    f1 = f1_score(y_test, predicted_knn, average='weighted')
+    f1_scores.append(f1)
+
+    print(f"K: {k}, Test Accuracy: {accuracy}, Precision: {precision}, Recall: {recall}, f1: {f1}")
+    print(f"K: {k}, Train Accuracy: {trainAccuracy}")
+
+#------------------------------
+
+# plot accuracies of training and test data
+
+plt.figure(figsize=(20, 10))
+plt.plot(k_count, accuracies, marker='o', label='Test Accuracy')
+plt.plot(k_count, trainAccuracies, marker='o', label='Training Accuracy')
+
+plt.title('k vs. Accuracy')
+plt.xlabel('k')
+plt.ylabel('Accuracy')
+plt.legend()
+plt.savefig("graphs/knn.pdf")
+plt.show()
